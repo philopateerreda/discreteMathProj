@@ -244,10 +244,23 @@ class LogicWidget(QWidget):
                 result_item.setForeground(Qt.cyan)
             table_widget.setItem(row_idx, num_vars, result_item)
         
-        # Adjust column widths and row heights
+        # Adjust column widths
         table_widget.resizeColumnsToContents()
         table_widget.horizontalHeader().setStretchLastSection(True)
-        table_widget.verticalHeader().setDefaultSectionSize(45) # Taller rows
+        
+        # Adjust row heights and table height to fit content
+        table_widget.resizeRowsToContents()
+        
+        # Calculate total height needed
+        header_height = table_widget.horizontalHeader().height()
+        rows_height = table_widget.verticalHeader().length()
+        # Add a small buffer for borders/frame
+        total_height = header_height + rows_height + 4
+        
+        # Set fixed height to prevent internal scrollbars
+        # The main page scrollbar will handle overflow
+        table_widget.setMinimumHeight(total_height)
+        table_widget.setMaximumHeight(total_height)
     
     def show_error(self, message):
         """Show error message."""

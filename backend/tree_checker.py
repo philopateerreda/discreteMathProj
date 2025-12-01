@@ -204,6 +204,98 @@ class TreeChecker:
         
         return (is_tree_result, explanation, details)
     
+    def get_traversals(self, root):
+        """
+        Get Pre-order, In-order, and Post-order traversals rooted at 'root'.
+        
+        Args:
+            root: The starting vertex for the tree.
+            
+        Returns:
+            dict: {
+                'pre_order': list,
+                'in_order': list or str (if not binary),
+                'post_order': list
+            }
+        """
+        if root not in self.vertices:
+            return {
+                'pre_order': [],
+                'in_order': "Invalid root",
+                'post_order': []
+            }
+            
+        # Build directed adjacency list (parent -> children) for the given root
+        # Since edges are undirected, we need to traverse BFS/DFS to establish direction
+        children_map = defaultdict(list)
+        visited = set([root])
+        queue = deque([root])
+        
+        while queue:
+            node = queue.popleft()
+            # Get neighbors, sort them alphabetically for deterministic output
+            neighbors = sorted(list(self.adjacency[node]))
+            
+            for neighbor in neighbors:
+                if neighbor not in visited:
+                    visited.add(neighbor)
+                    children_map[node].append(neighbor)
+                    queue.append(neighbor)
+        
+        # Pre-order: Root -> Children
+        pre_order_result = []
+        def dfs_pre(node):
+            pre_order_result.append(node)
+            for child in children_map[node]:
+                dfs_pre(child)
+        dfs_pre(root)
+        
+        # Post-order: Children -> Root
+        post_order_result = []
+        def dfs_post(node):
+            for child in children_map[node]:
+                dfs_post(child)
+            post_order_result.append(node)
+        dfs_post(root)
+        
+        # In-order: Left -> Root -> Right (Binary Tree only)
+        in_order_result = []
+        is_binary = True
+        
+        def dfs_in(node):
+            nonlocal is_binary
+            children = children_map[node]
+            count = len(children)
+            
+            if count > 2:
+                is_binary = False
+                return
+            
+            if count == 0:
+                in_order_result.append(node)
+            elif count == 1:
+                # Ambiguity: Is the single child left or right?
+                # Standard convention for single child in general tree -> treat as left?
+                # Or strictly: if we don't know, maybe just do Child -> Root?
+                # Let's assume: Left -> Root
+                dfs_in(children[0])
+                if not is_binary: return
+                in_order_result.append(node)
+            elif count == 2:
+                dfs_in(children[0]) # Left
+                if not is_binary: return
+                in_order_result.append(node) # Root
+                dfs_in(children[1]) # Right
+                if not is_binary: return
+
+        dfs_in(root)
+        
+        return {
+            'pre_order': pre_order_result,
+            'in_order': in_order_result if is_binary else "N/A (Not a Binary Tree)",
+            'post_order': post_order_result
+        }
+
     def get_visualization_data(self):
         """
         Get data for visualization.

@@ -5,7 +5,8 @@ PyQt5 interface for validating tree structures.
 
 from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
                              QLineEdit, QPushButton, QTextEdit, QGroupBox,
-                             QListWidget, QListWidgetItem, QSpinBox, QSplitter, QScrollArea)
+                             QListWidget, QListWidgetItem, QSpinBox, QSplitter, QScrollArea,
+                             QComboBox)
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont
 import sys
@@ -155,7 +156,31 @@ class TreeWidget(QWidget):
         result_layout.addWidget(self.details_text)
         
         result_group.setLayout(result_layout)
+        result_group.setLayout(result_layout)
         right_layout.addWidget(result_group)
+        
+        # Traversals
+        traversal_group = QGroupBox("Tree Traversals")
+        traversal_layout = QVBoxLayout()
+        
+        # Root selector
+        root_layout = QHBoxLayout()
+        root_layout.addWidget(QLabel("Root Vertex:"))
+        self.root_combo = QComboBox()
+        self.root_combo.currentIndexChanged.connect(self.update_traversals)
+        self.root_combo.setEnabled(False)
+        root_layout.addWidget(self.root_combo)
+        root_layout.addStretch()
+        traversal_layout.addLayout(root_layout)
+        
+        # Results
+        self.traversal_text = QTextEdit()
+        self.traversal_text.setReadOnly(True)
+        self.traversal_text.setMaximumHeight(150)
+        traversal_layout.addWidget(self.traversal_text)
+        
+        traversal_group.setLayout(traversal_layout)
+        right_layout.addWidget(traversal_group)
         
         splitter.addWidget(right_widget)
         splitter.setSizes([400, 600])
@@ -312,9 +337,56 @@ class TreeWidget(QWidget):
             
             self.details_text.setPlainText(details_text)
             
+            # Update Traversal UI
+            self.root_combo.clear()
+            self.traversal_text.clear()
+            
+            if is_tree:
+                self.root_combo.setEnabled(True)
+                # Add all vertices to combo, sorted
+                self.root_combo.addItems(sorted(list(self.checker.vertices)))
+                # This will trigger update_traversals via signal
+            else:
+                self.root_combo.setEnabled(False)
+                self.traversal_text.setText("Fix tree issues to see traversals.")
+            
         except Exception as e:
             self.show_error(f"Error: {str(e)}")
-    
+            
+    def update_traversals(self):
+        """Update traversal results based on selected root."""
+        if not self.checker or not self.root_combo.isEnabled():
+            return
+            
+        root = self.root_combo.currentText()
+        if not root:
+            return
+            
+        try:
+            results = self.checker.get_traversals(root)
+            
+            text = f"Rooted at '{root}':\n\n"
+            
+            # Pre-order
+            pre = ", ".join(results['pre_order'])
+            text += f"➤ Pre-order: {pre}\n"
+            
+            # In-order
+            in_order = results['in_order']
+            if isinstance(in_order, list):
+                text += f"➤ In-order:  {', '.join(in_order)}\n"
+            else:
+                text += f"➤ In-order:  {in_order}\n"
+                
+            # Post-order
+            post = ", ".join(results['post_order'])
+            text += f"➤ Post-order: {post}\n"
+            
+            self.traversal_text.setPlainText(text)
+            
+        except Exception as e:
+            self.traversal_text.setPlainText(f"Error calculating traversals: {str(e)}")
+
     def show_error(self, message):
         """Show error message."""
         self.result_label.setText(f"❌ {message}")
