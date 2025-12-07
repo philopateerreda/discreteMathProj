@@ -107,6 +107,8 @@ class RelationChecker:
         if 'transitive' in self._cache:
             return self._cache['transitive']
         
+
+
         violations = []
         for a, b in self.relation:
             for b2, c in self.relation:
@@ -120,6 +122,8 @@ class RelationChecker:
         result = (is_transitive, explanation)
         self._cache['transitive'] = result
         return result
+    
+
     
     def is_equivalence_relation(self):
         """
